@@ -45,6 +45,27 @@ class DatabaseHelper {
     await _ensureOtherCategoryExists(db);
     await _ensureDefaultExpenseCategoriesExist(db);
     await _ensureDefaultIncomeCategoriesExist(db);
+    await _ensureDefaultAccountsExist(db);
+  }
+
+  Future<void> _ensureDefaultAccountsExist(Database db) async {
+    final uuid = const Uuid();
+    for (var type in ['personal', 'company']) {
+      final res = await db.query(
+        'accounts',
+        where: 'type = ?',
+        whereArgs: [type],
+      );
+      if (res.isEmpty) {
+        await db.insert('accounts', {
+          'id': uuid.v4(),
+          'name': 'Tunai',
+          'type': type,
+          'balance': 0,
+          'sync_status': 'synced',
+        });
+      }
+    }
   }
 
   Future<void> _ensureOtherCategoryExists(Database db) async {
@@ -233,18 +254,18 @@ class DatabaseHelper {
   // Get categories and accounts for a specific type
   Future<List<Map<String, dynamic>>> getCategories(String type, {String? transactionType}) async {
     final db = await instance.database;
-    List<String> conditions = ['type = ?'];
-    List<dynamic> args = [type];
-    if (transactionType != null) {
-      conditions.add('transaction_type = ?');
-      args.add(transactionType);
-    }
-    return await db.query('categories', where: conditions.join(' AND '), whereArgs: args);
+    // We ignore transactionType now because categories are general and apply to both income/expense
+    return await db.query('categories', where: 'type = ?', whereArgs: [type], groupBy: 'name');
   }
 
   Future<List<Map<String, dynamic>>> getAccounts(String type) async {
     final db = await instance.database;
-    return await db.query('accounts', where: 'type = ?', whereArgs: [type]);
+    final res = await db.query('accounts', where: 'type = ?', whereArgs: [type]);
+    if (res.isEmpty) {
+      await _ensureDefaultAccountsExist(db);
+      return await db.query('accounts', where: 'type = ?', whereArgs: [type]);
+    }
+    return res;
   }
 
   // Master Data CRUD

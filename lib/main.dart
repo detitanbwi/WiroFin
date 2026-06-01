@@ -35,6 +35,11 @@ import 'package:http/http.dart' as http;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PreferenceService.instance.init();
+  
+  // Default configurations for flutter run
+  AppConfig.instance = FreeConfig();
+  setupInjection();
+  
   runApp(const WiroFinApp());
 }
 

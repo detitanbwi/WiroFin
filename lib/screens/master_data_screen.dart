@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../l10n/app_localizations.dart';
 import '../services/database_helper.dart';
@@ -261,16 +262,18 @@ class AccountManagementPage extends StatefulWidget {
 class _AccountManagementPageState extends State<AccountManagementPage> {
   List<Map<String, dynamic>> _accounts = [];
   bool _isLoading = true;
+  late String _currentType;
 
   @override
   void initState() {
     super.initState();
+    _currentType = widget.activeMode;
     _loadData();
   }
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final accounts = await DatabaseHelper.instance.getAccounts(widget.activeMode);
+    final accounts = await DatabaseHelper.instance.getAccounts(_currentType);
     setState(() {
       _accounts = accounts;
       _isLoading = false;
@@ -279,7 +282,9 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
 
   void _showAddEditDialog({Map<String, dynamic>? item}) {
     final TextEditingController nameController = TextEditingController(text: item?['name'] ?? '');
-    final TextEditingController balanceController = TextEditingController(text: (item?['balance'] ?? 0).toString());
+    final int initialBalance = item?['balance'] ?? 0;
+    final String formattedInitialBalance = initialBalance == 0 ? '' : NumberFormat('#,###', 'id_ID').format(initialBalance);
+    final TextEditingController balanceController = TextEditingController(text: formattedInitialBalance);
 
     showDialog(
       context: context,
@@ -311,8 +316,13 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
                 labelText: AppLocalizations.of(context)?.initialBalance ?? 'Saldo Awal',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                prefixText: 'Rp ',
               ),
               keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                CurrencyInputFormatter(),
+              ],
             ),
           ],
         ),
@@ -325,8 +335,9 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.isNotEmpty) {
-                final balance = int.tryParse(balanceController.text) ?? 0;
-                final data = {'name': nameController.text.trim(), 'type': widget.activeMode, 'balance': balance};
+                final balanceStr = balanceController.text.replaceAll(RegExp(r'[^0-9]'), '');
+                final balance = int.tryParse(balanceStr) ?? 0;
+                final data = {'name': nameController.text.trim(), 'type': _currentType, 'balance': balance};
                 if (item == null) {
                   await DatabaseHelper.instance.insertAccount(data);
                 } else {
@@ -374,6 +385,36 @@ class _AccountManagementPageState extends State<AccountManagementPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)?.bankAccountManagement ?? 'Pengelolaan Rekening', style: const TextStyle(fontWeight: FontWeight.bold)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8).copyWith(bottom: 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'personal', label: Text('Pribadi')),
+                  ButtonSegment(value: 'company', label: Text('Perusahaan')),
+                ],
+                selected: {_currentType},
+                onSelectionChanged: (Set<String> newSelection) {
+                  setState(() {
+                    _currentType = newSelection.first;
+                  });
+                  _loadData();
+                },
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+                    if (states.contains(MaterialState.selected)) {
+                      return Theme.of(context).primaryColor.withOpacity(0.1);
+                    }
+                    return Colors.white;
+                  }),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -431,16 +472,18 @@ class CategorySettingsPage extends StatefulWidget {
 class _CategorySettingsPageState extends State<CategorySettingsPage> {
   List<Map<String, dynamic>> _categories = [];
   bool _isLoading = true;
+  late String _currentType;
 
   @override
   void initState() {
     super.initState();
+    _currentType = widget.activeMode;
     _loadData();
   }
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final categories = await DatabaseHelper.instance.getCategories(widget.activeMode);
+    final categories = await DatabaseHelper.instance.getCategories(_currentType);
     setState(() {
       _categories = categories;
       _isLoading = false;
@@ -449,7 +492,6 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
 
   void _showAddEditDialog({Map<String, dynamic>? item}) {
     final TextEditingController nameController = TextEditingController(text: item?['name'] ?? '');
-    String selectedTxType = item?['transaction_type'] ?? 'expense';
 
     showDialog(
       context: context,
@@ -476,62 +518,6 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
                   ),
                   autofocus: true,
                 ),
-                if (item == null) ...[
-                  const SizedBox(height: 16),
-                  Text(AppLocalizations.of(context)?.transactionType ?? 'Jenis Transaksi', style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setDialogState(() => selectedTxType = 'expense'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: selectedTxType == 'expense' ? Colors.red.shade50 : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: selectedTxType == 'expense' ? Colors.red.shade300 : Colors.transparent),
-                            ),
-                            child: Center(
-                              child: Text(
-                                AppLocalizations.of(context)?.expense ?? 'Pengeluaran',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: selectedTxType == 'expense' ? Colors.red.shade700 : Colors.grey.shade600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => setDialogState(() => selectedTxType = 'income'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: selectedTxType == 'income' ? Colors.green.shade50 : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: selectedTxType == 'income' ? Colors.green.shade300 : Colors.transparent),
-                            ),
-                            child: Center(
-                              child: Text(
-                                AppLocalizations.of(context)?.income ?? 'Pemasukan',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: selectedTxType == 'income' ? Colors.green.shade700 : Colors.grey.shade600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ],
             ),
             actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -543,7 +529,7 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
               ElevatedButton(
                 onPressed: () async {
                   if (nameController.text.isNotEmpty) {
-                    final data = {'name': nameController.text.trim(), 'type': widget.activeMode, 'transaction_type': selectedTxType};
+                    final data = {'name': nameController.text.trim(), 'type': _currentType, 'transaction_type': 'general'};
                     if (item == null) {
                       await DatabaseHelper.instance.insertCategory(data);
                     } else {
@@ -597,6 +583,36 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)?.transactionCategory ?? 'Kategori Transaksi', style: const TextStyle(fontWeight: FontWeight.bold)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8).copyWith(bottom: 12),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'personal', label: Text('Pribadi')),
+                  ButtonSegment(value: 'company', label: Text('Perusahaan')),
+                ],
+                selected: {_currentType},
+                onSelectionChanged: (Set<String> newSelection) {
+                  setState(() {
+                    _currentType = newSelection.first;
+                  });
+                  _loadData();
+                },
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.resolveWith<Color>((states) {
+                    if (states.contains(MaterialState.selected)) {
+                      return Theme.of(context).primaryColor.withOpacity(0.1);
+                    }
+                    return Colors.white;
+                  }),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -609,14 +625,9 @@ class _CategorySettingsPageState extends State<CategorySettingsPage> {
                   itemBuilder: (context, index) {
                     final item = _categories[index];
                     final isOther = item['name'] == 'Other';
-                    final txTypeStr = item['transaction_type'] == 'income'
-                        ? (AppLocalizations.of(context)?.income ?? 'Pemasukan')
-                        : (AppLocalizations.of(context)?.expense ?? 'Pengeluaran');
-                    final badgeColor = item['transaction_type'] == 'income' ? Colors.green : Colors.red;
 
                     return ListTile(
                       title: Text(item['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w500)),
-                      subtitle: Text(txTypeStr, style: TextStyle(fontSize: 12, color: badgeColor, fontWeight: FontWeight.bold)),
                       trailing: isOther
                           ? Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1221,6 +1232,35 @@ class _DebugToolsPageState extends State<DebugToolsPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class CurrencyInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    String cleanText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanText.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    final int value = int.parse(cleanText);
+    final String formattedText = NumberFormat('#,###', 'id_ID').format(value);
+
+    final int selectionIndexFromRight = newValue.text.length - newValue.selection.end;
+    int newSelectionIndex = formattedText.length - selectionIndexFromRight;
+    if (newSelectionIndex < 0) newSelectionIndex = 0;
+
+    return TextEditingValue(
+      text: formattedText,
+      selection: TextSelection.collapsed(offset: newSelectionIndex),
     );
   }
 }

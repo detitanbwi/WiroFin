@@ -49,7 +49,7 @@ class _TransactionBottomSheetState extends State<TransactionBottomSheet> {
   }
 
   List<Map<String, dynamic>> get _filteredCategories {
-    return _categories.where((c) => (c['transaction_type'] ?? 'expense') == _transactionType).toList();
+    return _categories;
   }
 
   void _updateSelectedCategory() {
@@ -372,6 +372,7 @@ class _TransactionBottomSheetState extends State<TransactionBottomSheet> {
                               child: DropdownButton<String>(
                                 value: _selectedAccountId,
                                 isExpanded: true,
+                                hint: Text('Pilih Rekening', style: TextStyle(color: Colors.grey.shade400)),
                                 icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade400),
                                 style: const TextStyle(color: Color(0xFF1E293B), fontSize: 14, fontWeight: FontWeight.w500),
                                 onChanged: (String? newValue) {
