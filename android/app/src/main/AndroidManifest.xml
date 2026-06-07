@@ -78,5 +78,21 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Banking apps for Auto-Track package visibility (Android 11+) -->
+        <package android:name="com.bca" />
+        <package android:name="com.bca.mybca" />
+        <package android:name="com.bca.mybca.omni.android" />
+        <package android:name="com.bcadigital.blu" />
+        <package android:name="id.co.bri.brimo" />
+        <package android:name="id.bmri.livin" />
+        <package android:name="id.bni.wondr" />
+        <package android:name="com.mediasoft.bni" />
+        <package android:name="com.jago.digitalBanking" />
+        <package android:name="com.alloapp.yump" />
+        <package android:name="id.co.btn.mobilebanking.android" />
+        <package android:name="com.btpn.dc" />
+        <package android:name="id.dana" />
+        <package android:name="com.krom.android" />
+        <package android:name="id.co.bankbkemobile.digitalbank" />
     </queries>
 </manifest>

@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/services/preference_service.dart';
 import '../../widgets/top_toast.dart';
@@ -126,6 +128,37 @@ class _DebugToolsPageState extends State<DebugToolsPage> {
               await PreferenceService.instance.setHasCreatedFirstTransaction(false);
               if (mounted) {
                 TopToast.show(context, 'Seluruh status edukasi & onboarding berhasil direset ke awal!');
+              }
+            },
+          ),
+          const SizedBox(height: 16),
+          _buildDebugOption(
+            icon: Icons.notification_important_outlined,
+            title: 'Kirim Notifikasi Uji Coba (Debug Notification)',
+            subtitle: 'Kirim notifikasi lokal secara instan untuk menguji apakah sistem notifikasi WiroFin bekerja dengan baik.',
+            buttonText: 'Kirim Notifikasi',
+            buttonColor: Colors.pink.shade700,
+            onTap: () async {
+              final pushStatus = await Permission.notification.request();
+              if (pushStatus.isDenied || pushStatus.isPermanentlyDenied) {
+                if (mounted) {
+                  TopToast.show(context, 'Izin notifikasi ditolak oleh pengguna.', isError: true);
+                }
+                return;
+              }
+              const channel = MethodChannel('com.wirodev.wirofin/auto_track');
+              try {
+                await channel.invokeMethod('showLocalNotification', {
+                  'title': 'WiroFin Uji Coba',
+                  'message': 'Ini adalah notifikasi uji coba dari menu debug.',
+                });
+                if (mounted) {
+                  TopToast.show(context, 'Notifikasi uji coba dikirim!');
+                }
+              } catch (e) {
+                if (mounted) {
+                  TopToast.show(context, 'Gagal mengirim notifikasi: $e', isError: true);
+                }
               }
             },
           ),

@@ -2,14 +2,69 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'database_helper.dart';
 import 'package:intl/intl.dart';
+import '../core/services/preference_service.dart';
 
 class NotificationParserService {
   static final NotificationParserService instance = NotificationParserService._init();
   NotificationParserService._init();
 
+  String? getAppKey(String packageName) {
+    switch (packageName) {
+      case 'com.bca':
+        return 'bca_mobile';
+      case 'com.bca.mybca':
+      case 'com.bca.mybca.omni.android':
+        return 'mybca';
+      case 'com.bcadigital.blu':
+        return 'blu';
+      case 'id.co.bri.brimo':
+        return 'brimo';
+      case 'id.bmri.livin':
+        return 'livin';
+      case 'id.bni.wondr':
+      case 'com.mediasoft.bni':
+        return 'bni';
+      case 'com.jago.digitalBanking':
+        return 'jago';
+      case 'com.alloapp.yump':
+        return 'allobank';
+      case 'id.co.btn.mobilebanking.android':
+        return 'btn';
+      case 'com.btpn.dc':
+        return 'jenius';
+      case 'id.dana':
+        return 'dana';
+      case 'com.krom.android':
+        return 'krom';
+      case 'id.co.bankbkemobile.digitalbank':
+        return 'seabank';
+      default:
+        return null;
+    }
+  }
+
   static const MethodChannel _channel = MethodChannel('com.wirodev.wirofin/auto_track');
 
   bool _isListening = false;
+  final List<VoidCallback> _listeners = [];
+
+  void addListener(VoidCallback listener) {
+    _listeners.add(listener);
+  }
+
+  void removeListener(VoidCallback listener) {
+    _listeners.remove(listener);
+  }
+
+  void _notifyListeners() {
+    for (final listener in List<VoidCallback>.from(_listeners)) {
+      try {
+        listener();
+      } catch (e) {
+        print("WiroFin NotificationParserService: Error notifying listener: $e");
+      }
+    }
+  }
 
   void init() {
     if (_isListening) return;
@@ -59,7 +114,35 @@ class NotificationParserService {
       return;
     }
 
-    final String accountId = accounts.first['id'];
+    // Find matching linked account for this package
+    final appKey = getAppKey(packageName);
+    String? accountId;
+    
+    if (appKey != null) {
+      for (var acc in accounts) {
+        if (acc['linked_package'] == appKey) {
+          accountId = acc['id'];
+          break;
+        }
+      }
+    }
+    
+    // If no account is linked, check if it's the simulator for testing, otherwise IGNORE!
+    if (accountId == null) {
+      if (appKey == 'wirofin_sim') {
+        if (accounts.isNotEmpty) {
+          accountId = accounts.first['id'];
+        }
+      } else {
+        print("WiroFin NotificationParserService: No account linked to $appKey ($packageName). Ignoring transaction.");
+        return;
+      }
+    }
+    
+    if (accountId == null) {
+      print("WiroFin NotificationParserService: No account available to record transaction. Ignoring.");
+      return;
+    }
     
     // Find category ID for "Other" or "Lainnya" or use the first available category
     String categoryId = categories.first['id'];
@@ -84,14 +167,21 @@ class NotificationParserService {
       'transaction_type': type,
     });
     print("WiroFin NotificationParserService: Saved to DB with id=$id");
+    _notifyListeners();
 
     // Send local notification
     try {
+      final isEnglish = PreferenceService.instance.languageCode == 'en';
       final formattedAmount = NumberFormat('#,##0', 'id_ID').format(amount);
-      final notificationMessage = 'Transaksi ${type == 'expense' ? 'pengeluaran' : 'pemasukan'} tercatat Rp $formattedAmount';
+      
+      final String notificationTitle = isEnglish ? 'WiroFin Auto-Track' : 'WiroFin Catat Otomatis';
+      final String notificationMessage = isEnglish
+          ? 'Tracked ${type == 'expense' ? 'expense' : 'income'} transaction of Rp $formattedAmount'
+          : 'Transaksi ${type == 'expense' ? 'pengeluaran' : 'pemasukan'} tercatat Rp $formattedAmount';
+          
       print("WiroFin NotificationParserService: Displaying local notification: $notificationMessage");
       await _channel.invokeMethod('showLocalNotification', {
-        'title': 'WiroFin Auto-Track',
+        'title': notificationTitle,
         'message': notificationMessage,
       });
     } catch (e) {
@@ -104,10 +194,12 @@ class NotificationParserService {
     
     // Determine the application name
     switch (packageName) {
-      case 'com.wirodev.wirofin': // For testing and simulations
       case 'com.bca.mybca':
       case 'com.bca.mybca.omni.android':
         appName = 'myBCA';
+        break;
+      case 'com.bcadigital.blu':
+        appName = 'Blu by BCA';
         break;
       case 'com.bca':
         appName = 'BCA Mobile';
@@ -115,26 +207,33 @@ class NotificationParserService {
       case 'id.co.bri.brimo':
         appName = 'BRImo';
         break;
-      case 'com.bankmandiri.livin':
+      case 'id.bmri.livin':
         appName = 'Livin\' by Mandiri';
         break;
-      case 'id.co.bni.newbnicust':
+      case 'id.bni.wondr':
+      case 'com.mediasoft.bni':
         appName = 'BNI Mobile';
         break;
-      case 'com.jago.app':
+      case 'com.jago.digitalBanking':
         appName = 'Bank Jago';
         break;
-      case 'id.allobank.android':
+      case 'com.alloapp.yump':
         appName = 'Allo Bank';
         break;
-      case 'id.co.btn.mobile':
+      case 'id.co.btn.mobilebanking.android':
         appName = 'BTN Mobile';
         break;
-      case 'com.btpn.bwtn':
+      case 'com.btpn.dc':
         appName = 'Jenius';
         break;
       case 'id.dana':
         appName = 'DANA';
+        break;
+      case 'com.krom.android':
+        appName = 'Krom Bank';
+        break;
+      case 'id.co.bankbkemobile.digitalbank':
+        appName = 'Sea Bank';
         break;
       default:
         return null;

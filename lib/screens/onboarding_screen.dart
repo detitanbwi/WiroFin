@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:io';
+import 'dart:typed_data';
 import '../core/services/preference_service.dart';
 import '../services/database_helper.dart';
 import '../services/backup_service.dart';
@@ -23,6 +25,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final TextEditingController _walletController = TextEditingController(text: 'Tunai');
   int _currentPage = 0;
 
+  static const Map<String, String> supportedApps = {
+    'mybca': 'myBCA',
+    'bca_mobile': 'BCA Mobile',
+    'brimo': 'BRImo (BRI)',
+    'livin': 'Livin\' by Mandiri',
+    'bni': 'BNI Mobile',
+    'jago': 'Bank Jago',
+    'allobank': 'Allo Bank',
+    'btn': 'BTN Mobile',
+    'jenius': 'Jenius',
+    'dana': 'DANA',
+    'wirofin_sim': 'Simulasi WiroFin (Debug)',
+  };
+
   // State data
   String _userName = '';
   String _walletName = 'Tunai';
@@ -30,9 +46,115 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   bool _isLoading = false;
   bool _termsAccepted = false;
 
+  List<dynamic> _installedApps = [];
+  bool _loadingInstalledApps = true;
+  String? _selectedPackage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInstalledApps();
+  }
+
+  Future<void> _loadInstalledApps() async {
+    try {
+      const channel = MethodChannel('com.wirodev.wirofin/auto_track');
+      final List<dynamic>? list = await channel.invokeMethod('getInstalledBankingApps');
+      if (list != null) {
+        setState(() {
+          _installedApps = list;
+          _loadingInstalledApps = false;
+        });
+      } else {
+        setState(() => _loadingInstalledApps = false);
+      }
+    } catch (_) {
+      setState(() => _loadingInstalledApps = false);
+    }
+  }
+
+  List<DropdownMenuItem<String?>> _buildDropdownItems() {
+    final List<DropdownMenuItem<String?>> items = [];
+    items.add(
+      const DropdownMenuItem<String?>(
+        value: null,
+        child: Row(
+          children: [
+            Icon(Icons.link_off, color: Colors.grey, size: 20),
+            SizedBox(width: 8),
+            Text('Tidak Terhubung'),
+          ],
+        ),
+      ),
+    );
+
+    final installedKeys = _installedApps.map((a) => a['appKey'] as String).toSet();
+
+    // 1. Add Installed Apps first
+    for (var app in _installedApps) {
+      items.add(
+        DropdownMenuItem<String?>(
+          value: app['appKey'] as String,
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: Image.memory(
+                  app['icon'] as Uint8List,
+                  width: 20,
+                  height: 20,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  app['name'] as String,
+                  style: const TextStyle(fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis),
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.check_circle, color: Colors.green, size: 14),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 2. Add uninstalled supported apps
+    supportedApps.forEach((key, name) {
+      if (!installedKeys.contains(key)) {
+        items.add(
+          DropdownMenuItem<String?>(
+            value: key,
+            child: Row(
+              children: [
+                const Icon(Icons.account_balance_outlined, color: Colors.grey, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    name,
+                    style: TextStyle(color: Colors.grey.shade600, overflow: TextOverflow.ellipsis),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '(Belum Terpasang)',
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade400, fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    });
+
+    return items;
+  }
+
   void _nextPage() {
     FocusScope.of(context).unfocus();
-    if (_currentPage < 4) {
+    if (_currentPage < 5) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -66,6 +188,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         'name': walletName.isEmpty ? 'Tunai' : walletName,
         'type': 'personal',
         'balance': balance,
+        'linked_package': _selectedPackage,
       });
 
       // Mark as not first launch
@@ -117,6 +240,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _buildProfilePage(),
                   _buildWidgetIntroPage(),
                   _buildWalletSetupPage(),
+                  _buildAutoTrackSetupPage(),
                 ],
               ),
             ),
@@ -563,6 +687,82 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  Widget _buildAutoTrackSetupPage() {
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          children: [
+            const SizedBox(height: 30),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.bolt, size: 60, color: Colors.orange.shade600),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Otomatisasi Catatan Transaksi',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'WiroFin dapat memantau notifikasi bank Anda secara 100% lokal & offline untuk mencatat pengeluaran secara otomatis.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600, height: 1.4),
+            ),
+            const SizedBox(height: 32),
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              elevation: 0,
+              color: Colors.grey.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Hubungkan Rekening "${_walletController.text.isEmpty ? 'Tunai' : _walletController.text}" ke Aplikasi:',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    _loadingInstalledApps
+                        ? const Center(child: CircularProgressIndicator())
+                        : DropdownButtonFormField<String?>(
+                            value: _selectedPackage,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              labelText: 'Hubungkan Aplikasi (Auto-Track)',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            items: _buildDropdownItems(),
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedPackage = val;
+                              });
+                            },
+                          ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Anda juga bisa melewatinya dengan memilih "Tidak Terhubung" dan mengaturnya nanti di menu Pengaturan Rekening.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade400, height: 1.4),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomControls() {
     return Container(
       padding: const EdgeInsets.all(24.0),
@@ -585,7 +785,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
           // Dots indicator
           Row(
-            children: List.generate(5, (index) {
+            children: List.generate(6, (index) {
               return AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 margin: const EdgeInsets.only(right: 8),
@@ -613,7 +813,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: _isLoading
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : Text(
-                      _currentPage == 4 
+                      _currentPage == 5 
                         ? (AppLocalizations.of(context)?.finish ?? 'Selesai')
                         : (AppLocalizations.of(context)?.next ?? 'Lanjut'),
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),

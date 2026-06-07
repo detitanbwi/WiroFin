@@ -1,6 +1,11 @@
 === WIROFIN APP CHANGELOG ===
 
 [2026-06-07]
+- Bump versi aplikasi ke v1.2.3+8 untuk database migration v4.
+- Menambahkan kolom linked_package pada tabel database accounts untuk memetakan rekening ke aplikasi perbankan/e-wallet tertentu.
+- Menambahkan Dropdown Form di dialog tambah/edit rekening untuk menghubungkan rekening ke aplikasi otomatisasi terpilih (myBCA, BRImo, Livin', DANA, dll.).
+- Menampilkan badge visual "Auto-Track: [Nama Aplikasi]" dengan ikon petir biru pada rekening yang terhubung di Pengelolaan Rekening.
+- Membatasi proses Auto-Track agar hanya mencatat transaksi apabila aplikasi pengirim notifikasi telah dihubungkan dengan salah satu rekening aktif pengguna (mengabaikan notifikasi lain demi keamanan data).
 - Menambahkan dukungan deteksi notifikasi m-banking myBCA (com.bca.mybca.omni.android) ke whitelist Auto-Track.
 - Mengintegrasikan local push notifications "Transaksi pengeluaran tercatat Rp xxxx" ketika Auto-Track membaca notifikasi perbankan.
 - Menghapus awalan "Auto-Track: " dari catatan transaksi agar deskripsi lebih bersih.

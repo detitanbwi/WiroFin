@@ -126,7 +126,7 @@ class DatabaseHelper {
 
     final db = await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -143,6 +143,9 @@ class DatabaseHelper {
     if (oldVersion < 3) {
       await db.execute("ALTER TABLE categories ADD COLUMN transaction_type TEXT NOT NULL DEFAULT 'expense';");
       await db.execute("ALTER TABLE expenses ADD COLUMN transaction_type TEXT NOT NULL DEFAULT 'expense';");
+    }
+    if (oldVersion < 4) {
+      await db.execute("ALTER TABLE accounts ADD COLUMN linked_package TEXT;");
     }
   }
 
@@ -263,6 +266,7 @@ class DatabaseHelper {
         name $textType,
         type $textType, -- 'personal' or 'company'
         balance INTEGER NOT NULL DEFAULT 0,
+        linked_package TEXT,
         sync_status TEXT DEFAULT 'pending'
       )
     ''');

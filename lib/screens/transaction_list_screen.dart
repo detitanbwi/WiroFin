@@ -7,6 +7,7 @@ import '../services/sync_service.dart';
 import '../core/config/app_config.dart';
 import '../core/di/injection.dart';
 import '../domain/repositories/expense_repository.dart';
+import '../services/notification_parser_service.dart';
 
 class TransactionListScreen extends StatefulWidget {
   final List<Map<String, dynamic>> transactions;
@@ -24,7 +25,7 @@ class TransactionListScreen extends StatefulWidget {
   State<TransactionListScreen> createState() => _TransactionListScreenState();
 }
 
-class _TransactionListScreenState extends State<TransactionListScreen> {
+class _TransactionListScreenState extends State<TransactionListScreen> with WidgetsBindingObserver {
   DateTimeRange? _selectedDateRange;
   late List<Map<String, dynamic>> _allTransactions = [];
   late List<Map<String, dynamic>> _displayTransactions = [];
@@ -32,12 +33,35 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    NotificationParserService.instance.addListener(_onAutoTracked);
     _allTransactions = widget.transactions;
     // Refresh UI otomatis jika ada sinkronisasi di background
     if (!AppConfig.instance.isOfflineMode) {
       SyncService.instance.onSyncComplete = _loadTransactions;
     }
     _loadTransactions();
+  }
+
+  void _onAutoTracked() {
+    if (mounted) {
+      _loadTransactions();
+      widget.onRefresh();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadTransactions();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    NotificationParserService.instance.removeListener(_onAutoTracked);
+    super.dispose();
   }
 
   Future<void> _loadTransactions() async {

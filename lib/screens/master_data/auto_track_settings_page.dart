@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../l10n/app_localizations.dart';
 
 class AutoTrackSettingsPage extends StatefulWidget {
@@ -60,10 +61,25 @@ class _AutoTrackSettingsPageState extends State<AutoTrackSettingsPage> with Widg
   }
 
   Future<void> _toggleAutoTrack(bool value) async {
-    if (value && !_hasPermission) {
-      _showPermissionDialog();
-      return;
+    if (value) {
+      if (!_hasPermission) {
+        _showPermissionDialog();
+        return;
+      }
+      
+      // Request POST_NOTIFICATIONS runtime permission for local notifications (Android 13+)
+      final status = await Permission.notification.request();
+      if (status.isDenied || status.isPermanentlyDenied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('WiroFin membutuhkan izin notifikasi untuk menampilkan notifikasi pencatatan transaksi.'),
+            ),
+          );
+        }
+      }
     }
+    
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('auto_track_enabled', value);
     setState(() {

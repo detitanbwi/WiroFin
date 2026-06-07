@@ -112,7 +112,7 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   late String _activeMode;
   List<Map<String, dynamic>> _transactions = [];
   List<Map<String, dynamic>> _categoryData = [];
@@ -126,6 +126,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    NotificationParserService.instance.addListener(_onAutoTracked);
     _activeMode = PreferenceService.instance.activeMode;
     _userName = PreferenceService.instance.userName;
     _loadTransactions();
@@ -141,6 +143,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _checkWhatsNew();
       }
     });
+  }
+
+  void _onAutoTracked() {
+    if (mounted) {
+      _loadTransactions(silent: true);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadTransactions(silent: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    NotificationParserService.instance.removeListener(_onAutoTracked);
+    super.dispose();
   }
 
   Future<void> _checkWhatsNew() async {
