@@ -48,19 +48,7 @@ android {
         }
     }
 
-    flavorDimensions += "mode"
 
-    productFlavors {
-        create("free") {
-            dimension = "mode"
-            resValue("string", "app_name", "WiroFin Free")
-        }
-        create("pro") {
-            dimension = "mode"
-            applicationIdSuffix = ".pro"
-            resValue("string", "app_name", "WiroFin Pro")
-        }
-    }
 
     buildTypes {
         release {

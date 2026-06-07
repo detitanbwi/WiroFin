@@ -179,7 +179,7 @@ abstract class AppLocalizations {
   /// No description provided for @transactionHistory.
   ///
   /// In id, this message translates to:
-  /// **'Riwayat Transaksi'**
+  /// **'Riwayat Transaksi Hari Ini'**
   String get transactionHistory;
 
   /// No description provided for @seeAll.
@@ -638,6 +638,12 @@ abstract class AppLocalizations {
   /// **'Ekspor Data ke JSON'**
   String get exportJson;
 
+  /// No description provided for @exportExcel.
+  ///
+  /// In id, this message translates to:
+  /// **'Ekspor Data ke Excel'**
+  String get exportExcel;
+
   /// No description provided for @importJson.
   ///
   /// In id, this message translates to:
@@ -979,6 +985,216 @@ abstract class AppLocalizations {
   /// In id, this message translates to:
   /// **'Tips: Widget WiroFin akan otomatis menyesuaikan warnanya sesuai mode (Personal/Company) saat aplikasi dibuka.'**
   String get widgetTips;
+
+  /// No description provided for @autoTrackTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Otomatisasi M-Banking & E-Wallet'**
+  String get autoTrackTitle;
+
+  /// No description provided for @autoTrackSwitch.
+  ///
+  /// In id, this message translates to:
+  /// **'Aktifkan Auto-Track'**
+  String get autoTrackSwitch;
+
+  /// No description provided for @autoTrackSwitchDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Deteksi nominal transaksi dari notifikasi yang masuk secara otomatis'**
+  String get autoTrackSwitchDesc;
+
+  /// No description provided for @autoTrackPermission.
+  ///
+  /// In id, this message translates to:
+  /// **'Izin Akses Notifikasi'**
+  String get autoTrackPermission;
+
+  /// No description provided for @autoTrackPermissionActive.
+  ///
+  /// In id, this message translates to:
+  /// **'Izin telah diberikan'**
+  String get autoTrackPermissionActive;
+
+  /// No description provided for @autoTrackPermissionInactive.
+  ///
+  /// In id, this message translates to:
+  /// **'Izin belum diaktifkan'**
+  String get autoTrackPermissionInactive;
+
+  /// No description provided for @autoTrackPermissionBtn.
+  ///
+  /// In id, this message translates to:
+  /// **'Aktifkan'**
+  String get autoTrackPermissionBtn;
+
+  /// No description provided for @autoTrackPrivacyTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Privacy-First (100% Lokal)'**
+  String get autoTrackPrivacyTitle;
+
+  /// No description provided for @autoTrackPrivacyDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'WiroFin memproses data notifikasi hanya di dalam memori lokal ponsel Anda. Tidak ada data transaksi atau informasi pribadi yang dikirim ke server luar.'**
+  String get autoTrackPrivacyDesc;
+
+  /// No description provided for @autoTrackSupportedApps.
+  ///
+  /// In id, this message translates to:
+  /// **'Aplikasi yang Didukung:'**
+  String get autoTrackSupportedApps;
+
+  /// No description provided for @autoTrackDialogTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Izin Akses Notifikasi'**
+  String get autoTrackDialogTitle;
+
+  /// No description provided for @autoTrackDialogContent.
+  ///
+  /// In id, this message translates to:
+  /// **'WiroFin membutuhkan izin untuk membaca notifikasi sistem agar dapat melacak transaksi perbankan Anda secara otomatis.\n\nSemua data diproses 100% secara lokal dan offline di perangkat Anda demi menjaga keamanan data keuangan.'**
+  String get autoTrackDialogContent;
+
+  /// No description provided for @autoTrackDialogCancel.
+  ///
+  /// In id, this message translates to:
+  /// **'Batal'**
+  String get autoTrackDialogCancel;
+
+  /// No description provided for @autoTrackDialogSettings.
+  ///
+  /// In id, this message translates to:
+  /// **'Buka Pengaturan'**
+  String get autoTrackDialogSettings;
+
+  /// No description provided for @autoBackupTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Auto-Backup & Pemulihan Otomatis'**
+  String get autoBackupTitle;
+
+  /// No description provided for @autoBackupSettingTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Pengaturan Auto-Backup'**
+  String get autoBackupSettingTitle;
+
+  /// No description provided for @autoBackupSwitch.
+  ///
+  /// In id, this message translates to:
+  /// **'Aktifkan Auto-Backup'**
+  String get autoBackupSwitch;
+
+  /// No description provided for @autoBackupSwitchDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Cadangkan data secara otomatis ketika membuka aplikasi'**
+  String get autoBackupSwitchDesc;
+
+  /// No description provided for @autoBackupInterval.
+  ///
+  /// In id, this message translates to:
+  /// **'Interval Pencadangan'**
+  String get autoBackupInterval;
+
+  /// No description provided for @autoBackupIntervalDaily.
+  ///
+  /// In id, this message translates to:
+  /// **'Setiap Hari'**
+  String get autoBackupIntervalDaily;
+
+  /// No description provided for @autoBackupIntervalWeekly.
+  ///
+  /// In id, this message translates to:
+  /// **'Setiap 7 Hari'**
+  String get autoBackupIntervalWeekly;
+
+  /// No description provided for @autoBackupIntervalMonthly.
+  ///
+  /// In id, this message translates to:
+  /// **'Setiap 30 Hari'**
+  String get autoBackupIntervalMonthly;
+
+  /// No description provided for @autoBackupMaxFiles.
+  ///
+  /// In id, this message translates to:
+  /// **'Batas Penumpukan Cadangan'**
+  String get autoBackupMaxFiles;
+
+  /// No description provided for @autoBackupMaxFilesDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'Jumlah maksimal file cadangan yang disimpan di folder lokal sebelum file tertua dihapus (FIFO).'**
+  String get autoBackupMaxFilesDesc;
+
+  /// No description provided for @autoBackupBtn.
+  ///
+  /// In id, this message translates to:
+  /// **'Cadangkan Sekarang'**
+  String get autoBackupBtn;
+
+  /// No description provided for @autoBackupSuccess.
+  ///
+  /// In id, this message translates to:
+  /// **'Backup otomatis berhasil dibuat'**
+  String get autoBackupSuccess;
+
+  /// No description provided for @autoBackupFailed.
+  ///
+  /// In id, this message translates to:
+  /// **'Gagal membuat backup otomatis'**
+  String get autoBackupFailed;
+
+  /// No description provided for @autoBackupNoticeTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Manajemen File Cadangan'**
+  String get autoBackupNoticeTitle;
+
+  /// No description provided for @autoBackupNoticeDesc.
+  ///
+  /// In id, this message translates to:
+  /// **'File cadangan disimpan secara offline di folder khusus \'wirofin_autobackups\'. Sistem akan otomatis menghapus file cadangan terlama jika jumlah file melebihi batas penumpukan.'**
+  String get autoBackupNoticeDesc;
+
+  /// No description provided for @autoBackupDisableWarning.
+  ///
+  /// In id, this message translates to:
+  /// **'PERHATIAN: Menonaktifkan auto-backup berarti data Anda tidak akan dicadangkan secara otomatis dan berisiko hilang jika aplikasi terhapus.'**
+  String get autoBackupDisableWarning;
+
+  /// No description provided for @autoBackupFileHeading.
+  ///
+  /// In id, this message translates to:
+  /// **'File Cadangan Lokal'**
+  String get autoBackupFileHeading;
+
+  /// No description provided for @autoBackupConfirmRestoreTitle.
+  ///
+  /// In id, this message translates to:
+  /// **'Konfirmasi Restore'**
+  String get autoBackupConfirmRestoreTitle;
+
+  /// No description provided for @autoBackupConfirmRestoreWarning.
+  ///
+  /// In id, this message translates to:
+  /// **'Apakah Anda yakin ingin memulihkan file cadangan ini? Semua data saat ini akan ditimpa.'**
+  String get autoBackupConfirmRestoreWarning;
+
+  /// No description provided for @autoBackupRestoreSuccess.
+  ///
+  /// In id, this message translates to:
+  /// **'Data berhasil dipulihkan!'**
+  String get autoBackupRestoreSuccess;
+
+  /// No description provided for @autoBackupNoFiles.
+  ///
+  /// In id, this message translates to:
+  /// **'Tidak ada file cadangan lokal ditemukan'**
+  String get autoBackupNoFiles;
 }
 
 class _AppLocalizationsDelegate

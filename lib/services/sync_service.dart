@@ -5,6 +5,7 @@ import 'database_helper.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart';
 
 class SyncService {
   static final SyncService instance = SyncService._init();
@@ -17,6 +18,7 @@ class SyncService {
   static const String baseUrl = 'http://192.168.18.51/autodocument/api';
 
   void init() {
+    if (kIsWeb) return;
     _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
       if (results.isNotEmpty && results.first != ConnectivityResult.none) {
         syncAll();
@@ -26,6 +28,7 @@ class SyncService {
   }
 
   Future<void> syncAll() async {
+    if (kIsWeb) return;
     await fetchMasterData(); 
     await syncPendingData(); 
   }

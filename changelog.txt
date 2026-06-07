@@ -1,0 +1,26 @@
+=== WIROFIN APP CHANGELOG ===
+
+[2026-06-07]
+- Menambahkan dukungan deteksi notifikasi m-banking myBCA (com.bca.mybca.omni.android) ke whitelist Auto-Track.
+- Mengintegrasikan local push notifications "Transaksi pengeluaran tercatat Rp xxxx" ketika Auto-Track membaca notifikasi perbankan.
+- Menghapus awalan "Auto-Track: " dari catatan transaksi agar deskripsi lebih bersih.
+- Menambahkan fitur pencadangan otomatis (Auto-Backup) berkala dengan interval harian, batas penumpukan file (FIFO), dan restore lokal.
+- Mengembalikan tombol ekspor spreadsheet Excel (.xlsx) dan impor JSON manual dari folder eksternal di halaman Backup & Restore.
+- Membagi master_data_screen.dart menjadi modul-modul sub-page terorganisasi di folder lib/screens/master_data/.
+- Menambahkan switcher mode transaksi (Pribadi <-> Usaha) di bottom sheet edit transaksi lengkap dengan indikator latar belakang warna HSL adaptif.
+- Membatasi kemunculan switcher transaksi hanya saat mengedit transaksi lama guna menghindari error skema pada transaksi baru.
+- Menghapus tombol switcher di daftar transaksi utama demi tampilan UI yang lebih minimalis.
+
+[2026-06-03]
+- Mengoptimalkan parameter memori JVM Gradle Daemon (-Xmx3G -XX:MaxMetaspaceSize=1G -XX:ReservedCodeCacheSize=256m) di gradle.properties untuk mencegah JVM out-of-memory crash.
+- Menghapus warning deprecation synthetic-package di l10n.yaml.
+- Menyesuaikan lebar GridView Numpad di halaman onboarding setup Rekening Utama agar proporsional dan tidak full-wide pada layar tablet/mode lanskap (maksimal 500px).
+- Membatasi lebar dialog/popup promo "WiroFin Widget" (fitur baru) di main.dart agar proporsional pada layar tablet/mode lanskap (maksimal 480px).
+- Membatasi lebar dialog simulasi "What's New" di master_data_screen.dart agar proporsional pada layar tablet/mode lanskap (maksimal 480px).
+- Menghapus konfigurasi Flutter Flavor "Pro" di build.gradle.kts dan app_config.dart serta menghapus file entry point lib/main_free.dart dan lib/main_pro.dart, sehingga aplikasi dikonfigurasi sebagai aplikasi single offline gratis secara default.
+- Menambahkan fitur ekspor data transaksi dan rekening ke format spreadsheet Excel (.xlsx) menggunakan package excel, lengkap dengan tombol ekspor di menu Backup & Restore.
+- Memfilter riwayat transaksi di dashboard utama agar hanya menampilkan transaksi hari ini saja.
+- Menambahkan penanda waktu (jam menit format HH:mm) pada daftar riwayat transaksi hari ini di dashboard.
+- Mengubah judul komponen riwayat transaksi di dashboard dari "Riwayat Transaksi" menjadi "Riwayat Transaksi Hari Ini".
+- Menonaktifkan DevicePreview secara default di main.dart agar aplikasi berjalan langsung secara natif memenuhi layar tablet/HP tanpa terbungkus simulator bingkai telepon.
+- Mengubah pengaturan GridView Numpad di onboarding_screen.dart dari childAspectRatio ke mainAxisExtent: 52 agar tinggi tombol tetap konsisten dan tidak terpotong (angka 0 dan backspace hilang) saat lebar layar bertambah di tablet.

@@ -1,43 +1,35 @@
-# 🚀 Catatan Rilis (Release Notes) - WiroFin v1.2.0
+# 🚀 Catatan Rilis (Release Notes) - WiroFin v1.2.2
 
-**Versi:** `1.2.0 (Build 4)`
-**Tanggal Rilis:** Mei 2026
+**Versi:** `1.2.2 (Build 7)`
+**Tanggal Rilis:** Juni 2026
 **Status Rilis:** Production Release (Google Play Store)
 
 ---
 
 ## ✨ Fitur Baru & Peningkatan Utama
 
-### 📱 1. WiroFin Home Screen Widget (Baru!)
+### 🤖 1. Deteksi Notifikasi M-Banking myBCA & E-Wallet (Auto-Track)
+Kami meningkatkan fitur pendeteksian otomatis transaksi dari notifikasi keuangan agar lebih akurat dan terintegrasi:
+* **Whitelist Aplikasi myBCA:** Menambahkan dukungan penuh untuk mendeteksi notifikasi transaksi dari aplikasi myBCA (`com.bca.mybca.omni.android`).
+* **Penyimpanan Cerdas & Kategori Otomatis:** Transaksi dari notifikasi bank otomatis disimpan langsung ke mode **Pribadi** dengan kategori **Lainnya / Other**.
+* **Notifikasi Lokal Pencatatan:** WiroFin kini mengirimkan notifikasi internal "Transaksi pengeluaran tercatat Rp xxxx" atau nominal pemasukan sebagai konfirmasi instan setelah mendeteksi notifikasi perbankan.
+* **Deskripsi Lebih Bersih:** Menghapus prefiks `"Auto-Track: "` dari deskripsi transaksi agar catatan bersih dan nyaman dibaca.
 
-Sekarang Anda dapat memantau kesehatan finansial langsung dari layar depan (*home screen*) ponsel Android Anda tanpa harus membuka aplikasi!
+### 🛡️ 2. Fitur Pencadangan Otomatis & Pemulihan (Auto-Backup & Restore)
+Kami menambahkan sistem perlindungan data transaksi secara otomatis agar data Anda tidak mudah hilang:
+* **Auto-Backup Harian (FIFO):** Data dicadangkan secara otomatis berdasarkan interval harian yang Anda pilih (Harian, 3 Hari, atau 7 Hari).
+* **Batas Penumpukan Cadangan:** Sistem otomatis melakukan rotasi *First-In-First-Out* (FIFO) untuk menghapus file cadangan terlama demi menghemat ruang penyimpanan perangkat Anda.
+* **Halaman Pengaturan Khusus:** Menu baru di Master Data untuk mengaktifkan pencadangan otomatis, mengatur interval, batas file, melihat daftar file cadangan lokal, serta melakukan pemulihan (*restore*) langsung.
+* **Pengembalian Tombol Ekspor/Impor:** Memulihkan kembali tombol Ekspor ke Excel (.xlsx) dan Impor JSON manual dari folder eksternal di halaman Backup & Restore.
 
-* **Pemantauan Saldo & Pengeluaran Seketika:** Pantau sisa anggaran dan total pengeluaran harian Anda secara *real-time*.
-* **Tombol Cepat "Catat Transaksi":** Tambahkan transaksi baru dalam satu ketukan langsung dari widget layar depan.
-* **Integrasi Tema Sistem:** Didukung oleh desain adaptif yang otomatis mengikuti mode Gelap/Terang (*Dark/Light Mode*) dari sistem ponsel Anda.
-* **Panduan Interaktif:** Tersedia halaman panduan cara pemasangan widget dan pop-up pengenalan (*What's New*) bernuansa *glassmorphism* yang elegan saat aplikasi pertama kali diperbarui.
+### 🎛️ 3. Pengubah Mode Transaksi Aman (Pribadi ↔ Usaha Switcher)
+Sekarang Anda dapat memindahkan catatan transaksi yang salah catat antara mode Pribadi dan Usaha dengan mudah:
+* **Switcher di Bottom Sheet Edit:** Tombol pengubah mode diletakkan dengan rapi di bagian atas lembar edit transaksi (*Edit Transaction Bottom Sheet*).
+* **Keamanan Skema Transaksi Baru:** Fitur pemindah mode ini **hanya aktif saat mengedit transaksi lama**. Untuk transaksi baru, tombol ini disembunyikan dan digantikan dengan *badge* status statis untuk mencegah *error* database / ketidaksesuaian data.
+* **Indikator Latar Belakang Psikologis:** Latar belakang halaman edit otomatis berubah warna dengan lembut mengikuti mode aktif (Warna Orange lembut untuk Pribadi, Teal lembut untuk Usaha) guna membantu psikologi pengguna agar mengenali mode aktif secara instan.
+* **Tampilan List Bersih:** Menghapus tombol pemindah mode dari baris daftar utama (*transaction list row*) agar UI daftar transaksi tetap minimalis dan bersih.
 
-### 🔄 2. Ekspor & Impor Data JSON Menyeluruh
-
-Kami telah meningkatkan keandalan fitur pencadangan data (*Backup & Restore*):
-
-* **Penyimpanan Profil & Saldo:** Proses ekspor dan impor kini mencakup seluruh pengaturan konfigurasi profil Anda (Nama Pengguna, Saldo Awal, Bahasa, Mode Personal/Bisnis, serta preferensi notifikasi).
-* **Bebas Repot:** Saat memulihkan (*restore*) data di perangkat baru, Anda tidak perlu lagi melakukan pengaturan profil secara manual dari awal.
-
-### 🌐 3. Bahasa, Diksi & Internasionalisasi yang Lebih Profesional
-
-* Seluruh aplikasi kini ditenagai oleh sistem lokalisasi resmi (`AppLocalizations`).
-* Penyempurnaan pilihan kata (diksi) dan tata bahasa finansial baku yang lebih konsisten, jelas, dan profesional baik untuk Bahasa Indonesia maupun Bahasa Inggris.
-
-### 🛡️ 4. Peningkatan Sistem Keamanan & Notifikasi Update
-
-* **In-App Update Play Store:** Aplikasi kini memiliki deteksi cerdas yang langsung terhubung ke Google Play Store untuk memastikan Anda selalu mendapatkan pembaruan keamanan terbaru.
-* **Navigasi Dialog Pintar:** Sistem otomatis mengatur antrean kemunculan pop-up agar informasi pembaruan wajib dan pengenalan fitur baru tidak saling menutupi.
-
----
-
-## 🛠️ Khusus Pengembang & Tim QA (Mode Testing)
-
-* **Halaman Uji Coba & Reset Status:** Penambahan menu khusus pada mode *debug* untuk melakukan simulasi pop-up *update* Play Store dan mengulang notifikasi *What's New* seketika.
-* **Tombol "Tutup Simulasi":** Dilengkapi tombol keluar cepat saat pengujian agar tidak terkunci di layar *update*.
-* **Auto-Hide Production Build:** Menggunakan sistem proteksi kompilator (`enableDebugTools`) di mana seluruh menu dan tombol simulasi ini **otomatis hilang 100%** ketika aplikasi dikompilasi untuk rilis resmi ke Play Store.
+### 📦 4. Modularisasi & Struktur Kode Bersih (Clean Code Architecture)
+Struktur kode aplikasi telah dirapikan agar lebih mudah dipelihara dan dikembangkan oleh tim:
+* **Pemisahan Modul Master Data:** Berkas utama `master_data_screen.dart` yang awalnya sangat panjang (1800+ baris) kini dipecah secara rapi ke dalam modul-modul sub-page terpisah di folder `lib/screens/master_data/` (seperti `profile_settings_page.dart`, `category_settings_page.dart`, dll.).
+* **Bebas Warnings & Lints:** Hasil audit statis (`flutter analyze`) pada file yang diubah menunjukkan **0 error & warnings** untuk menjamin kestabilan performa build aplikasi.

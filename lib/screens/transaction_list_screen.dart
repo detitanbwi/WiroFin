@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/transaction_bottom_sheet.dart';
 import '../widgets/top_toast.dart';
-import '../services/database_helper.dart';
 import '../services/sync_service.dart';
 import '../core/config/app_config.dart';
 import '../core/di/injection.dart';
@@ -71,7 +70,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     });
   }
 
-  void _showDeleteConfirmation(BuildContext context, Map<String, dynamic> transaction) {
+  void _showDeleteConfirmation(Map<String, dynamic> transaction) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -87,10 +86,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               await getIt<ExpenseRepository>().deleteExpense(transaction['id']);
               await _loadTransactions(); // Refresh lokal
               widget.onRefresh(); // Refresh Dashboard (untuk saat kembali)
-              if (mounted) {
-                Navigator.pop(context);
-                TopToast.show(context, AppLocalizations.of(context)?.successDeleteTransaction ?? 'Transaksi berhasil dihapus');
-              }
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              TopToast.show(context, AppLocalizations.of(context)?.successDeleteTransaction ?? 'Transaksi berhasil dihapus');
             },
             child: Text(AppLocalizations.of(context)?.delete ?? 'Hapus', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
@@ -99,7 +97,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  void _openEditSheet(BuildContext context, Map<String, dynamic> transaction) async {
+  void _openEditSheet(Map<String, dynamic> transaction) async {
     final result = await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -126,11 +124,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       });
       await _loadTransactions(); // Refresh lokal
       widget.onRefresh(); // Refresh Dashboard
-      if (mounted) {
-        TopToast.show(context, AppLocalizations.of(context)?.successUpdateTransaction ?? 'Transaksi berhasil diperbarui');
-      }
+      if (!context.mounted) return;
+      TopToast.show(context, AppLocalizations.of(context)?.successUpdateTransaction ?? 'Transaksi berhasil diperbarui');
     }
   }
+
 
   Future<void> _selectDateRange(BuildContext context) async {
     final primaryColor = Colors.orange.shade600;
@@ -255,7 +253,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        onTap: () => _openEditSheet(context, item),
+                        onTap: () => _openEditSheet(item),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Row(
@@ -337,9 +335,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                   const SizedBox(height: 8),
                                   Row(
                                     children: [
-                                      _actionIcon(Icons.edit_outlined, Colors.blue, () => _openEditSheet(context, item)),
+                                      _actionIcon(Icons.edit_outlined, Colors.blue, () => _openEditSheet(item)),
                                       const SizedBox(width: 8),
-                                      _actionIcon(Icons.delete_outline, Colors.red, () => _showDeleteConfirmation(context, item)),
+                                      _actionIcon(Icons.delete_outline, Colors.red, () => _showDeleteConfirmation(item)),
                                     ],
                                   )
                                 ],
@@ -356,8 +354,8 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
-  Widget _actionIcon(IconData icon, Color color, VoidCallback onTap) {
-    return GestureDetector(
+  Widget _actionIcon(IconData icon, Color color, VoidCallback onTap, {String? tooltip}) {
+    Widget button = GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(4),
@@ -368,5 +366,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         child: Icon(icon, size: 18, color: color),
       ),
     );
+    if (tooltip != null) {
+      button = Tooltip(
+        message: tooltip,
+        child: button,
+      );
+    }
+    return button;
   }
 }

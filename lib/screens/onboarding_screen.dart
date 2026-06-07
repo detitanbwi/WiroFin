@@ -440,52 +440,57 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Container(
       color: Colors.grey.shade50,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          childAspectRatio: 2.2,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-        ),
-        itemCount: 12,
-        itemBuilder: (context, index) {
-          if (index == 9) return const SizedBox.shrink(); // Empty slot
-          if (index == 11) {
-            return IconButton(
-              icon: const Icon(Icons.backspace_outlined, color: Colors.redAccent),
-              onPressed: () {
-                setState(() {
-                  if (_initialBalanceStr.isNotEmpty) {
-                    _initialBalanceStr = _initialBalanceStr.substring(0, _initialBalanceStr.length - 1);
-                    if (_initialBalanceStr.isEmpty) _initialBalanceStr = '0';
-                  }
-                });
-              },
-            );
-          }
-          final number = index == 10 ? 0 : index + 1;
-          return TextButton(
-            onPressed: () {
-              setState(() {
-                if (_initialBalanceStr == '0') {
-                  _initialBalanceStr = number.toString();
-                } else if (_initialBalanceStr.length < 12) {
-                  _initialBalanceStr += number.toString();
-                }
-              });
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisExtent: 52,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: 12,
+            itemBuilder: (context, index) {
+              if (index == 9) return const SizedBox.shrink(); // Empty slot
+              if (index == 11) {
+                return IconButton(
+                  icon: const Icon(Icons.backspace_outlined, color: Colors.redAccent),
+                  onPressed: () {
+                    setState(() {
+                      if (_initialBalanceStr.isNotEmpty) {
+                        _initialBalanceStr = _initialBalanceStr.substring(0, _initialBalanceStr.length - 1);
+                        if (_initialBalanceStr.isEmpty) _initialBalanceStr = '0';
+                      }
+                    });
+                  },
+                );
+              }
+              final number = index == 10 ? 0 : index + 1;
+              return TextButton(
+                onPressed: () {
+                  setState(() {
+                    if (_initialBalanceStr == '0') {
+                      _initialBalanceStr = number.toString();
+                    } else if (_initialBalanceStr.length < 12) {
+                      _initialBalanceStr += number.toString();
+                    }
+                  });
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: Text(
+                  number.toString(),
+                  style: const TextStyle(fontSize: 22, color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
+                ),
+              );
             },
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-            child: Text(
-              number.toString(),
-              style: const TextStyle(fontSize: 22, color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
-            ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

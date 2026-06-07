@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 /// Enum untuk membedakan mode aplikasi (Flavor).
-enum Flavor { free, pro }
+enum Flavor { free }
 
 /// Base Configuration untuk aplikasi.
 /// Digunakan untuk memisahkan variabel environment antara mode Free (Offline) dan Pro (Hybrid).
@@ -26,15 +26,15 @@ abstract class AppConfig {
   /// Otomatis aktif saat mode Debug / testing, dan otomatis nonaktif saat rilis (Release mode) ke Play Store.
   bool get enableDebugTools => kDebugMode;
 
-  /// Global instance yang harus diinisialisasi di `main_free.dart` atau `main_pro.dart`.
+  /// Global instance yang harus diinisialisasi di `main.dart`.
   static late AppConfig instance;
 }
 
 /// Konfigurasi khusus untuk Flavor Free (Full Offline).
-/// Di-inject melalui `lib/main_free.dart`.
+/// Di-inject melalui `lib/main.dart`.
 class FreeConfig extends AppConfig {
   @override
-  String get appName => "Expense Tracker Lite";
+  String get appName => "WiroFin";
 
   @override
   String get apiEndpoint => "";
@@ -44,20 +44,4 @@ class FreeConfig extends AppConfig {
 
   @override
   Flavor get flavor => Flavor.free;
-}
-
-/// Konfigurasi khusus untuk Flavor Pro (Hybrid/Private).
-/// Di-inject melalui `lib/main_pro.dart`.
-class ProConfig extends AppConfig {
-  @override
-  String get appName => "Expense Tracker Pro";
-
-  @override
-  String get apiEndpoint => "https://api.wirodev.com/v1";
-
-  @override
-  bool get isOfflineMode => false;
-
-  @override
-  Flavor get flavor => Flavor.pro;
 }

@@ -48,7 +48,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get expenseDistribution => 'Distribusi Pengeluaran';
 
   @override
-  String get transactionHistory => 'Riwayat Transaksi';
+  String get transactionHistory => 'Riwayat Transaksi Hari Ini';
 
   @override
   String get seeAll => 'Lihat Semua';
@@ -285,6 +285,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get exportJson => 'Ekspor Data ke JSON';
 
   @override
+  String get exportExcel => 'Ekspor Data ke Excel';
+
+  @override
   String get importJson => 'Impor Data dari JSON';
 
   @override
@@ -469,4 +472,117 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get widgetTips =>
       'Tips: Widget WiroFin akan otomatis menyesuaikan warnanya sesuai mode (Personal/Company) saat aplikasi dibuka.';
+
+  @override
+  String get autoTrackTitle => 'Otomatisasi M-Banking & E-Wallet';
+
+  @override
+  String get autoTrackSwitch => 'Aktifkan Auto-Track';
+
+  @override
+  String get autoTrackSwitchDesc =>
+      'Deteksi nominal transaksi dari notifikasi yang masuk secara otomatis';
+
+  @override
+  String get autoTrackPermission => 'Izin Akses Notifikasi';
+
+  @override
+  String get autoTrackPermissionActive => 'Izin telah diberikan';
+
+  @override
+  String get autoTrackPermissionInactive => 'Izin belum diaktifkan';
+
+  @override
+  String get autoTrackPermissionBtn => 'Aktifkan';
+
+  @override
+  String get autoTrackPrivacyTitle => 'Privacy-First (100% Lokal)';
+
+  @override
+  String get autoTrackPrivacyDesc =>
+      'WiroFin memproses data notifikasi hanya di dalam memori lokal ponsel Anda. Tidak ada data transaksi atau informasi pribadi yang dikirim ke server luar.';
+
+  @override
+  String get autoTrackSupportedApps => 'Aplikasi yang Didukung:';
+
+  @override
+  String get autoTrackDialogTitle => 'Izin Akses Notifikasi';
+
+  @override
+  String get autoTrackDialogContent =>
+      'WiroFin membutuhkan izin untuk membaca notifikasi sistem agar dapat melacak transaksi perbankan Anda secara otomatis.\n\nSemua data diproses 100% secara lokal dan offline di perangkat Anda demi menjaga keamanan data keuangan.';
+
+  @override
+  String get autoTrackDialogCancel => 'Batal';
+
+  @override
+  String get autoTrackDialogSettings => 'Buka Pengaturan';
+
+  @override
+  String get autoBackupTitle => 'Auto-Backup & Pemulihan Otomatis';
+
+  @override
+  String get autoBackupSettingTitle => 'Pengaturan Auto-Backup';
+
+  @override
+  String get autoBackupSwitch => 'Aktifkan Auto-Backup';
+
+  @override
+  String get autoBackupSwitchDesc =>
+      'Cadangkan data secara otomatis ketika membuka aplikasi';
+
+  @override
+  String get autoBackupInterval => 'Interval Pencadangan';
+
+  @override
+  String get autoBackupIntervalDaily => 'Setiap Hari';
+
+  @override
+  String get autoBackupIntervalWeekly => 'Setiap 7 Hari';
+
+  @override
+  String get autoBackupIntervalMonthly => 'Setiap 30 Hari';
+
+  @override
+  String get autoBackupMaxFiles => 'Batas Penumpukan Cadangan';
+
+  @override
+  String get autoBackupMaxFilesDesc =>
+      'Jumlah maksimal file cadangan yang disimpan di folder lokal sebelum file tertua dihapus (FIFO).';
+
+  @override
+  String get autoBackupBtn => 'Cadangkan Sekarang';
+
+  @override
+  String get autoBackupSuccess => 'Backup otomatis berhasil dibuat';
+
+  @override
+  String get autoBackupFailed => 'Gagal membuat backup otomatis';
+
+  @override
+  String get autoBackupNoticeTitle => 'Manajemen File Cadangan';
+
+  @override
+  String get autoBackupNoticeDesc =>
+      'File cadangan disimpan secara offline di folder khusus \'wirofin_autobackups\'. Sistem akan otomatis menghapus file cadangan terlama jika jumlah file melebihi batas penumpukan.';
+
+  @override
+  String get autoBackupDisableWarning =>
+      'PERHATIAN: Menonaktifkan auto-backup berarti data Anda tidak akan dicadangkan secara otomatis dan berisiko hilang jika aplikasi terhapus.';
+
+  @override
+  String get autoBackupFileHeading => 'File Cadangan Lokal';
+
+  @override
+  String get autoBackupConfirmRestoreTitle => 'Konfirmasi Restore';
+
+  @override
+  String get autoBackupConfirmRestoreWarning =>
+      'Apakah Anda yakin ingin memulihkan file cadangan ini? Semua data saat ini akan ditimpa.';
+
+  @override
+  String get autoBackupRestoreSuccess => 'Data berhasil dipulihkan!';
+
+  @override
+  String get autoBackupNoFiles => 'Tidak ada file cadangan lokal ditemukan';
 }

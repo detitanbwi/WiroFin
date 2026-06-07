@@ -5,12 +5,16 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../core/services/preference_service.dart';
 import 'database_helper.dart';
+import 'package:flutter/foundation.dart';
+import 'package:excel/excel.dart';
+import 'package:intl/intl.dart';
 
 class BackupService {
   static final BackupService instance = BackupService._();
   BackupService._();
 
   Future<String?> exportData() async {
+    if (kIsWeb) return null;
     try {
       final db = DatabaseHelper.instance;
       final transactions = await db.queryAll('expenses');
@@ -53,7 +57,114 @@ class BackupService {
     }
   }
 
+  Future<String?> exportExcelData() async {
+    if (kIsWeb) return null;
+    try {
+      final db = DatabaseHelper.instance;
+      final transactions = await db.queryAll('expenses');
+      final accounts = await db.queryAll('accounts');
+      final categories = await db.queryAll('categories');
+
+      final excel = Excel.createExcel();
+      
+      // Rename default sheet
+      final String defaultSheet = excel.getDefaultSheet() ?? 'Sheet1';
+      excel.rename(defaultSheet, 'Transaksi');
+      final Sheet sheet = excel['Transaksi'];
+
+      // Headers for Transactions
+      sheet.appendRow([
+        TextCellValue('ID'),
+        TextCellValue('Tanggal'),
+        TextCellValue('Tipe'),
+        TextCellValue('Kategori'),
+        TextCellValue('Rekening'),
+        TextCellValue('Nominal (Rp)'),
+        TextCellValue('Keterangan')
+      ]);
+
+      // Create lookup maps for accounts and categories
+      final Map<String, String> accountMap = {
+        for (var acc in accounts) acc['id'].toString(): acc['name'].toString()
+      };
+      final Map<String, String> categoryMap = {
+        for (var cat in categories) cat['id'].toString(): cat['name'].toString()
+      };
+
+      final dateFormatter = DateFormat('yyyy-MM-dd HH:mm');
+
+      for (var tx in transactions) {
+        final String txId = tx['id']?.toString() ?? '';
+        final String txDateStr = tx['date']?.toString() ?? '';
+        String formattedDate = '';
+        if (txDateStr.isNotEmpty) {
+          try {
+            formattedDate = dateFormatter.format(DateTime.parse(txDateStr));
+          } catch (_) {
+            formattedDate = txDateStr;
+          }
+        }
+        final String type = tx['transaction_type'] == 'income' ? 'Pemasukan' : 'Pengeluaran';
+        final String category = categoryMap[tx['category_id']?.toString()] ?? 'Other';
+        final String account = accountMap[tx['account_id']?.toString()] ?? '';
+        final int amount = (tx['amount'] as num?)?.toInt() ?? 0;
+        final String desc = tx['description']?.toString() ?? '';
+
+        sheet.appendRow([
+          TextCellValue(txId),
+          TextCellValue(formattedDate),
+          TextCellValue(type),
+          TextCellValue(category),
+          TextCellValue(account),
+          IntCellValue(amount),
+          TextCellValue(desc),
+        ]);
+      }
+
+      // Add sheet for Accounts
+      final String accountsSheetName = 'Rekening';
+      final Sheet accSheet = excel[accountsSheetName];
+      accSheet.appendRow([
+        TextCellValue('Nama Rekening'),
+        TextCellValue('Tipe'),
+        TextCellValue('Saldo Awal (Rp)')
+      ]);
+      for (var acc in accounts) {
+        accSheet.appendRow([
+          TextCellValue(acc['name']?.toString() ?? ''),
+          TextCellValue(acc['type']?.toString() ?? ''),
+          IntCellValue((acc['balance'] as num?)?.toInt() ?? 0),
+        ]);
+      }
+
+      final fileBytes = excel.save();
+      if (fileBytes == null) return null;
+
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/wirofin_export_${DateTime.now().millisecondsSinceEpoch}.xlsx');
+      await file.writeAsBytes(fileBytes);
+
+      // Save to device using FilePicker
+      String? outputFile = await FilePicker.platform.saveFile(
+        dialogTitle: 'Pilih lokasi simpan Excel',
+        fileName: 'wirofin_data_${DateTime.now().millisecondsSinceEpoch}.xlsx',
+        type: FileType.custom,
+        allowedExtensions: ['xlsx'],
+        bytes: Uint8List.fromList(fileBytes),
+      );
+
+      if (outputFile != null) {
+        return outputFile;
+      }
+      return file.path;
+    } catch (e) {
+      debugPrint('Excel Export error: $e');
+      return null;
+    }
+  }
+
   Future<bool> importData() async {
+    if (kIsWeb) return false;
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,

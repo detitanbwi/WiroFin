@@ -1,14 +1,120 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
   static Database? _database;
 
+  // In-memory data untuk Web / Chrome preview
+  static final List<Map<String, dynamic>> _webExpenses = [];
+  static final List<Map<String, dynamic>> _webCategories = [];
+  static final List<Map<String, dynamic>> _webAccounts = [];
+  static bool _webInitialized = false;
+
+  void _initWebData() {
+    if (_webInitialized) return;
+    final uuid = const Uuid();
+    
+    // Add default accounts
+    for (var type in ['personal', 'company']) {
+      _webAccounts.add({
+        'id': uuid.v4(),
+        'name': 'Tunai',
+        'type': type,
+        'balance': 22223,
+        'sync_status': 'synced',
+      });
+    }
+
+    // Add default categories
+    for (var type in ['personal', 'company']) {
+      for (var txType in ['expense', 'income']) {
+        _webCategories.add({
+          'id': uuid.v4(),
+          'name': 'Other',
+          'type': type,
+          'transaction_type': txType,
+          'sync_status': 'synced',
+        });
+      }
+    }
+
+    final defaultExpenseCats = ['Food & Drink', 'Transportation'];
+    for (var type in ['personal', 'company']) {
+      for (var name in defaultExpenseCats) {
+        _webCategories.add({
+          'id': uuid.v4(),
+          'name': name,
+          'type': type,
+          'transaction_type': 'expense',
+          'sync_status': 'synced',
+        });
+      }
+    }
+
+    final personalIncomeCats = ['Gaji', 'Freelance', 'Investasi'];
+    for (var name in personalIncomeCats) {
+      _webCategories.add({
+        'id': uuid.v4(),
+        'name': name,
+        'type': 'personal',
+        'transaction_type': 'income',
+        'sync_status': 'synced',
+      });
+    }
+
+    final companyIncomeCats = ['Proyek', 'Retainer', 'Penjualan Lisensi'];
+    for (var name in companyIncomeCats) {
+      _webCategories.add({
+        'id': uuid.v4(),
+        'name': name,
+        'type': 'company',
+        'transaction_type': 'income',
+        'sync_status': 'synced',
+      });
+    }
+
+    // Pre-populate some dummy transactions
+    final tunaiPersonal = _webAccounts.firstWhere((a) => a['type'] == 'personal')['id'];
+    final foodPersonal = _webCategories.firstWhere((c) => c['name'] == 'Food & Drink' && c['type'] == 'personal')['id'];
+    final transPersonal = _webCategories.firstWhere((c) => c['name'] == 'Transportation' && c['type'] == 'personal')['id'];
+    
+    _webExpenses.addAll([
+      {
+        'id': uuid.v4(),
+        'amount': 25000,
+        'description': 'Makan Siang',
+        'category_id': foodPersonal,
+        'account_id': tunaiPersonal,
+        'date': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+        'type': 'personal',
+        'transaction_type': 'expense',
+        'sync_status': 'synced',
+      },
+      {
+        'id': uuid.v4(),
+        'amount': 15000,
+        'description': 'Ojek Online',
+        'category_id': transPersonal,
+        'account_id': tunaiPersonal,
+        'date': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+        'type': 'personal',
+        'transaction_type': 'expense',
+        'sync_status': 'synced',
+      },
+    ]);
+
+    _webInitialized = true;
+  }
+
   DatabaseHelper._init();
 
   Future<Database> get database async {
+    if (kIsWeb) {
+      throw UnsupportedError("SQLite native is not supported on Web. Methods are intercepted.");
+    }
     if (_database != null) return _database!;
     _database = await _initDB('wiro_expense.db');
     return _database!;
@@ -192,12 +298,40 @@ class DatabaseHelper {
 
   // Generic Query
   Future<List<Map<String, dynamic>>> queryAll(String table) async {
+    if (kIsWeb) {
+      _initWebData();
+      if (table == 'expenses') return List<Map<String, dynamic>>.from(_webExpenses);
+      if (table == 'accounts') return List<Map<String, dynamic>>.from(_webAccounts);
+      if (table == 'categories') return List<Map<String, dynamic>>.from(_webCategories);
+      return [];
+    }
     final db = await instance.database;
     return await db.query(table);
   }
 
   // Get Expenses with joins
   Future<List<Map<String, dynamic>>> getExpensesWithDetails({String? type, String? transactionType, DateTime? startDate, DateTime? endDate}) async {
+    if (kIsWeb) {
+      _initWebData();
+      List<Map<String, dynamic>> results = [];
+      for (var e in _webExpenses) {
+        if (type != null && e['type'] != type) continue;
+        if (transactionType != null && e['transaction_type'] != transactionType) continue;
+        if (startDate != null && DateTime.parse(e['date'] as String).isBefore(startDate)) continue;
+        if (endDate != null && DateTime.parse(e['date'] as String).isAfter(endDate)) continue;
+
+        var cat = _webCategories.firstWhere((c) => c['id'] == e['category_id'], orElse: () => {'name': 'Unknown'});
+        var acc = _webAccounts.firstWhere((a) => a['id'] == e['account_id'], orElse: () => {'name': 'Unknown'});
+
+        results.add({
+          ...e,
+          'category': cat['name'],
+          'account': acc['name'],
+        });
+      }
+      results.sort((a, b) => (b['date'] as String).compareTo(a['date'] as String));
+      return results;
+    }
     final db = await instance.database;
     List<String> conditions = [];
     if (type != null) conditions.add("e.type = '$type'");
@@ -219,6 +353,17 @@ class DatabaseHelper {
 
   // Insert Expense
   Future<String> insertExpense(Map<String, dynamic> data) async {
+    if (kIsWeb) {
+      _initWebData();
+      final id = const Uuid().v4();
+      _webExpenses.add({
+        'transaction_type': 'expense',
+        ...data,
+        'id': id,
+        'sync_status': 'pending',
+      });
+      return id;
+    }
     final db = await instance.database;
     final id = const Uuid().v4();
     await db.insert('expenses', {
@@ -232,6 +377,19 @@ class DatabaseHelper {
 
   // Update Expense
   Future<int> updateExpense(String id, Map<String, dynamic> data) async {
+    if (kIsWeb) {
+      _initWebData();
+      final index = _webExpenses.indexWhere((e) => e['id'] == id);
+      if (index != -1) {
+        _webExpenses[index] = {
+          ..._webExpenses[index],
+          ...data,
+          'sync_status': 'pending',
+        };
+        return 1;
+      }
+      return 0;
+    }
     final db = await instance.database;
     return await db.update(
       'expenses',
@@ -243,6 +401,12 @@ class DatabaseHelper {
 
   // Delete Expense
   Future<int> deleteExpense(String id) async {
+    if (kIsWeb) {
+      _initWebData();
+      final before = _webExpenses.length;
+      _webExpenses.removeWhere((e) => e['id'] == id);
+      return before - _webExpenses.length;
+    }
     final db = await instance.database;
     return await db.delete(
       'expenses',
@@ -253,12 +417,28 @@ class DatabaseHelper {
 
   // Get categories and accounts for a specific type
   Future<List<Map<String, dynamic>>> getCategories(String type, {String? transactionType}) async {
+    if (kIsWeb) {
+      _initWebData();
+      final seen = <String>{};
+      final list = _webCategories.where((c) => c['type'] == type).toList();
+      final unique = <Map<String, dynamic>>[];
+      for (var c in list) {
+        if (seen.add(c['name'] as String)) {
+          unique.add(c);
+        }
+      }
+      return unique;
+    }
     final db = await instance.database;
     // We ignore transactionType now because categories are general and apply to both income/expense
     return await db.query('categories', where: 'type = ?', whereArgs: [type], groupBy: 'name');
   }
 
   Future<List<Map<String, dynamic>>> getAccounts(String type) async {
+    if (kIsWeb) {
+      _initWebData();
+      return _webAccounts.where((a) => a['type'] == type).toList();
+    }
     final db = await instance.database;
     final res = await db.query('accounts', where: 'type = ?', whereArgs: [type]);
     if (res.isEmpty) {
@@ -270,6 +450,16 @@ class DatabaseHelper {
 
   // Master Data CRUD
   Future<String> insertAccount(Map<String, dynamic> data) async {
+    if (kIsWeb) {
+      _initWebData();
+      final id = const Uuid().v4();
+      _webAccounts.add({
+        ...data,
+        'id': id,
+        'sync_status': 'pending',
+      });
+      return id;
+    }
     final db = await instance.database;
     final id = const Uuid().v4();
     await db.insert('accounts', {
@@ -281,6 +471,19 @@ class DatabaseHelper {
   }
 
   Future<int> updateAccount(String id, Map<String, dynamic> data) async {
+    if (kIsWeb) {
+      _initWebData();
+      final index = _webAccounts.indexWhere((a) => a['id'] == id);
+      if (index != -1) {
+        _webAccounts[index] = {
+          ..._webAccounts[index],
+          ...data,
+          'sync_status': 'pending',
+        };
+        return 1;
+      }
+      return 0;
+    }
     final db = await instance.database;
     return await db.update(
       'accounts',
@@ -291,11 +494,28 @@ class DatabaseHelper {
   }
 
   Future<int> deleteAccount(String id) async {
+    if (kIsWeb) {
+      _initWebData();
+      final before = _webAccounts.length;
+      _webAccounts.removeWhere((a) => a['id'] == id);
+      return before - _webAccounts.length;
+    }
     final db = await instance.database;
     return await db.delete('accounts', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<String> insertCategory(Map<String, dynamic> data) async {
+    if (kIsWeb) {
+      _initWebData();
+      final id = const Uuid().v4();
+      _webCategories.add({
+        'transaction_type': 'expense',
+        ...data,
+        'id': id,
+        'sync_status': 'pending',
+      });
+      return id;
+    }
     final db = await instance.database;
     final id = const Uuid().v4();
     await db.insert('categories', {
@@ -308,6 +528,19 @@ class DatabaseHelper {
   }
 
   Future<int> updateCategory(String id, Map<String, dynamic> data) async {
+    if (kIsWeb) {
+      _initWebData();
+      final index = _webCategories.indexWhere((c) => c['id'] == id);
+      if (index != -1) {
+        _webCategories[index] = {
+          ..._webCategories[index],
+          ...data,
+          'sync_status': 'pending',
+        };
+        return 1;
+      }
+      return 0;
+    }
     final db = await instance.database;
     return await db.update(
       'categories',
@@ -318,6 +551,37 @@ class DatabaseHelper {
   }
 
   Future<int> deleteCategory(String id) async {
+    if (kIsWeb) {
+      _initWebData();
+      final index = _webCategories.indexWhere((c) => c['id'] == id);
+      if (index == -1) return 0;
+      final cat = _webCategories[index];
+      if (cat['name'] == 'Other') return 0;
+
+      final type = cat['type'] as String;
+      final txType = cat['transaction_type'] as String;
+
+      final otherCat = _webCategories.firstWhere(
+        (c) => c['name'] == 'Other' && c['type'] == type && c['transaction_type'] == txType,
+        orElse: () => <String, dynamic>{},
+      );
+
+      if (otherCat.isNotEmpty) {
+        final otherId = otherCat['id'] as String;
+        for (var i = 0; i < _webExpenses.length; i++) {
+          if (_webExpenses[i]['category_id'] == id) {
+            _webExpenses[i] = {
+              ..._webExpenses[i],
+              'category_id': otherId,
+              'sync_status': 'pending',
+            };
+          }
+        }
+      }
+
+      _webCategories.removeAt(index);
+      return 1;
+    }
     final db = await instance.database;
     final cats = await db.query('categories', where: 'id = ?', whereArgs: [id]);
     if (cats.isEmpty) return 0;
@@ -349,6 +613,22 @@ class DatabaseHelper {
 
   // Statistics Queries
   Future<List<Map<String, dynamic>>> getCategoryExpenses(String type, {String? transactionType, DateTime? startDate, DateTime? endDate}) async {
+    if (kIsWeb) {
+      _initWebData();
+      final Map<String, int> totals = {};
+      for (var e in _webExpenses) {
+        if (e['type'] != type) continue;
+        if (transactionType != null && e['transaction_type'] != transactionType) continue;
+        if (startDate != null && DateTime.parse(e['date'] as String).isBefore(startDate)) continue;
+        if (endDate != null && DateTime.parse(e['date'] as String).isAfter(endDate)) continue;
+
+        final cat = _webCategories.firstWhere((c) => c['id'] == e['category_id'], orElse: () => {'name': 'Unknown'});
+        final catName = cat['name'] as String;
+        final amount = e['amount'] as int;
+        totals[catName] = (totals[catName] ?? 0) + amount;
+      }
+      return totals.entries.map((entry) => {'category': entry.key, 'total': entry.value}).toList();
+    }
     final db = await instance.database;
     List<String> conditions = ["e.type = ?"];
     List<dynamic> args = [type];
@@ -376,6 +656,26 @@ class DatabaseHelper {
   }
 
   Future<List<Map<String, dynamic>>> getDailyExpensesTrend(String type, {String? transactionType, DateTime? startDate, DateTime? endDate}) async {
+    if (kIsWeb) {
+      _initWebData();
+      final Map<String, int> dailyTotals = {};
+      for (var e in _webExpenses) {
+        if (e['type'] != type) continue;
+        if (transactionType != null && e['transaction_type'] != transactionType) continue;
+        if (startDate != null && DateTime.parse(e['date'] as String).isBefore(startDate)) continue;
+        if (endDate != null && DateTime.parse(e['date'] as String).isAfter(endDate)) continue;
+
+        final dateStr = e['date'].toString().substring(0, 10);
+        final amount = e['amount'] as int;
+        dailyTotals[dateStr] = (dailyTotals[dateStr] ?? 0) + amount;
+      }
+      final list = dailyTotals.entries.map((entry) => {'day': entry.key, 'total': entry.value}).toList();
+      list.sort((a, b) => (a['day'] as String).compareTo(b['day'] as String));
+      if (startDate == null && endDate == null && list.length > 7) {
+        return list.sublist(list.length - 7);
+      }
+      return list;
+    }
     final db = await instance.database;
     List<String> conditions = ["type = ?"];
     List<dynamic> args = [type];

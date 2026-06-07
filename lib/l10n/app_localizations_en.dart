@@ -48,7 +48,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseDistribution => 'Expense Distribution';
 
   @override
-  String get transactionHistory => 'Transaction History';
+  String get transactionHistory => 'Today\'s Transactions';
 
   @override
   String get seeAll => 'See All';
@@ -285,6 +285,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportJson => 'Export Data to JSON';
 
   @override
+  String get exportExcel => 'Export Data to Excel';
+
+  @override
   String get importJson => 'Import Data from JSON';
 
   @override
@@ -468,4 +471,117 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get widgetTips =>
       'Tips: The WiroFin widget will automatically adjust its color according to the mode (Personal/Company) when the application is opened.';
+
+  @override
+  String get autoTrackTitle => 'M-Banking & E-Wallet Automation';
+
+  @override
+  String get autoTrackSwitch => 'Enable Auto-Track';
+
+  @override
+  String get autoTrackSwitchDesc =>
+      'Automatically detect transaction amount from incoming notifications';
+
+  @override
+  String get autoTrackPermission => 'Notification Access Permission';
+
+  @override
+  String get autoTrackPermissionActive => 'Permission granted';
+
+  @override
+  String get autoTrackPermissionInactive => 'Permission not enabled';
+
+  @override
+  String get autoTrackPermissionBtn => 'Enable';
+
+  @override
+  String get autoTrackPrivacyTitle => 'Privacy-First (100% Local)';
+
+  @override
+  String get autoTrackPrivacyDesc =>
+      'WiroFin processes notification data only in your phone\'s local memory. No transaction data or personal information is sent to external servers.';
+
+  @override
+  String get autoTrackSupportedApps => 'Supported Applications:';
+
+  @override
+  String get autoTrackDialogTitle => 'Notification Access Permission';
+
+  @override
+  String get autoTrackDialogContent =>
+      'WiroFin needs permission to read system notifications to track your banking transactions automatically.\n\nAll data is processed 100% locally and offline on your device to ensure financial data security.';
+
+  @override
+  String get autoTrackDialogCancel => 'Cancel';
+
+  @override
+  String get autoTrackDialogSettings => 'Open Settings';
+
+  @override
+  String get autoBackupTitle => 'Auto-Backup & Auto-Restore';
+
+  @override
+  String get autoBackupSettingTitle => 'Auto-Backup Settings';
+
+  @override
+  String get autoBackupSwitch => 'Enable Auto-Backup';
+
+  @override
+  String get autoBackupSwitchDesc =>
+      'Back up data automatically when opening the app';
+
+  @override
+  String get autoBackupInterval => 'Backup Interval';
+
+  @override
+  String get autoBackupIntervalDaily => 'Daily';
+
+  @override
+  String get autoBackupIntervalWeekly => 'Every 7 Days';
+
+  @override
+  String get autoBackupIntervalMonthly => 'Every 30 Days';
+
+  @override
+  String get autoBackupMaxFiles => 'Backup Retention Limit';
+
+  @override
+  String get autoBackupMaxFilesDesc =>
+      'Maximum backup files stored locally before the oldest is deleted (FIFO).';
+
+  @override
+  String get autoBackupBtn => 'Backup Now';
+
+  @override
+  String get autoBackupSuccess => 'Auto-backup successfully created';
+
+  @override
+  String get autoBackupFailed => 'Failed to create auto-backup';
+
+  @override
+  String get autoBackupNoticeTitle => 'Backup File Management';
+
+  @override
+  String get autoBackupNoticeDesc =>
+      'Backup files are saved offline in a dedicated \'wirofin_autobackups\' folder. The oldest backup will be automatically deleted if files exceed the retention limit.';
+
+  @override
+  String get autoBackupDisableWarning =>
+      'WARNING: Disabling auto-backup means your data will not be backed up automatically and is at risk of being lost if the app is uninstalled.';
+
+  @override
+  String get autoBackupFileHeading => 'Local Backup Files';
+
+  @override
+  String get autoBackupConfirmRestoreTitle => 'Confirm Restore';
+
+  @override
+  String get autoBackupConfirmRestoreWarning =>
+      'Are you sure you want to restore this backup file? All current data will be overwritten.';
+
+  @override
+  String get autoBackupRestoreSuccess => 'Data restored successfully!';
+
+  @override
+  String get autoBackupNoFiles => 'No local backup files found';
 }

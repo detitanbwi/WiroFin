@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
@@ -8,6 +9,7 @@ import 'widgets/top_toast.dart';
 import 'widgets/nlp_input_dialog.dart';
 import 'screens/transaction_list_screen.dart';
 import 'screens/master_data_screen.dart';
+import 'screens/master_data/widget_guide_page.dart';
 import 'widgets/transaction_bottom_sheet.dart';
 import 'widgets/expense_statistics_card.dart';
 import 'services/database_helper.dart';
@@ -22,7 +24,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'theme/theme_notifier.dart';
 import 'services/widget_service.dart';
+import 'services/notification_parser_service.dart';
+import 'services/auto_backup_service.dart';
 import 'package:home_widget/home_widget.dart';
+
 
 
 
@@ -35,6 +40,7 @@ import 'package:http/http.dart' as http;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PreferenceService.instance.init();
+  NotificationParserService.instance.init();
   
   // Default configurations for flutter run
   AppConfig.instance = FreeConfig();
@@ -67,6 +73,8 @@ class _WiroFinAppState extends State<WiroFinApp> {
           listenable: ThemeNotifier.instance,
           builder: (context, child) {
             return MaterialApp(
+              useInheritedMediaQuery: true,
+              locale: locale,
               title: 'WiroFin',
               debugShowCheckedModeBanner: false,
               localizationsDelegates: const [
@@ -79,7 +87,6 @@ class _WiroFinAppState extends State<WiroFinApp> {
                 Locale('id'),
                 Locale('en'),
               ],
-              locale: locale,
               theme: ThemeNotifier.instance.currentTheme,
               home: _isFirstLaunch
                   ? OnboardingScreen(
@@ -123,6 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _userName = PreferenceService.instance.userName;
     _loadTransactions();
     _initWidgetListener();
+    AutoBackupService.instance.checkAndExecuteBackup();
     // Refresh UI otomatis saat sinkronisasi background selesai
     if (!AppConfig.instance.isOfflineMode) {
       SyncService.instance.onSyncComplete = _loadTransactions;
@@ -165,12 +173,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return Dialog(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-              child: Container(
-                padding: const EdgeInsets.all(28),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.85),
                   borderRadius: BorderRadius.circular(24),
@@ -259,12 +269,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 
   Future<bool> _checkUpdate() async {
+    if (kIsWeb) return false;
     try {
       // 1. Cek koneksi internet terlebih dahulu (hanya ketika ada internet)
       final connectivityResult = await Connectivity().checkConnectivity();
@@ -566,6 +578,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     // Filter transactions based on active mode
     final filteredTransactions = _transactions.where((t) => t['type'] == _activeMode).toList();
+    
+    // Filter today's transactions for dashboard history list
+    final now = DateTime.now();
+    final todayTransactions = filteredTransactions.where((t) {
+      final date = t['date'] as DateTime;
+      return date.year == now.year &&
+             date.month == now.month &&
+             date.day == now.day;
+    }).toList();
     
     // Calculate total income, expense, and net balance
     final totalIncome = filteredTransactions
@@ -1056,7 +1077,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
                       ),
-                      if (filteredTransactions.isEmpty) 
+                      if (todayTransactions.isEmpty) 
                         Padding(
                           padding: const EdgeInsets.all(64.0),
                           child: Center(
@@ -1078,9 +1099,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          itemCount: filteredTransactions.length > 5 ? 5 : filteredTransactions.length,
+                          itemCount: todayTransactions.length > 5 ? 5 : todayTransactions.length,
                           itemBuilder: (context, index) {
-                            final item = filteredTransactions[index];
+                            final item = todayTransactions[index];
                             final isIncome = item['transaction_type'] == 'income';
                             return Container(
                               margin: const EdgeInsets.only(bottom: 16),
@@ -1141,9 +1162,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          (item['description'] == null || item['description'].isEmpty) 
-                                            ? (item['account'] ?? 'Pilih Akun...') 
-                                            : item['description'],
+                                          () {
+                                            final timeStr = DateFormat('HH:mm').format(item['date']);
+                                            final mainText = (item['description'] == null || item['description'].isEmpty)
+                                                ? (item['account'] ?? 'Pilih Akun...')
+                                                : item['description'];
+                                            return '$mainText • $timeStr';
+                                          }(),
                                           style: TextStyle(
                                             fontSize: 13,
                                             color: Colors.grey.shade500,

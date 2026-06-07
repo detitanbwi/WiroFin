@@ -30,10 +30,12 @@ class _TransactionBottomSheetState extends State<TransactionBottomSheet> {
   List<Map<String, dynamic>> _categories = [];
   List<Map<String, dynamic>> _accounts = [];
   bool _isLoading = true;
+  late String _currentMode;
 
   @override
   void initState() {
     super.initState();
+    _currentMode = widget.initialTransaction?['type'] ?? widget.activeMode;
     if (widget.initialTransaction != null) {
       _amount = widget.initialTransaction!['amount'].toString();
       _description = widget.initialTransaction!['description'] ?? '';
@@ -71,8 +73,8 @@ class _TransactionBottomSheetState extends State<TransactionBottomSheet> {
   }
 
   Future<void> _loadMasterData() async {
-    final cats = await DatabaseHelper.instance.getCategories(widget.activeMode);
-    final accs = await DatabaseHelper.instance.getAccounts(widget.activeMode);
+    final cats = await DatabaseHelper.instance.getCategories(_currentMode);
+    final accs = await DatabaseHelper.instance.getAccounts(_currentMode);
     setState(() {
       _categories = cats;
       _accounts = accs;
@@ -80,6 +82,67 @@ class _TransactionBottomSheetState extends State<TransactionBottomSheet> {
       if (_selectedAccountId == null && accs.isNotEmpty) {
         _selectedAccountId = accs.first['id'];
       }
+      _isLoading = false;
+    });
+  }
+
+  void _toggleMode() async {
+    setState(() {
+      _currentMode = _currentMode == 'personal' ? 'company' : 'personal';
+      _isLoading = true;
+    });
+    
+    final cats = await DatabaseHelper.instance.getCategories(_currentMode);
+    final accs = await DatabaseHelper.instance.getAccounts(_currentMode);
+    
+    setState(() {
+      _categories = cats;
+      _accounts = accs;
+      
+      // Try to find matching category by name
+      final currentCategoryName = _categories.firstWhere(
+        (c) => c['id'] == _selectedCategoryId, 
+        orElse: () => {'name': ''}
+      )['name'];
+      
+      _selectedCategoryId = null;
+      if (currentCategoryName != '') {
+        for (var cat in cats) {
+          if (cat['name'].toString().toLowerCase() == currentCategoryName.toString().toLowerCase()) {
+            _selectedCategoryId = cat['id'];
+            break;
+          }
+        }
+      }
+      if (_selectedCategoryId == null && cats.isNotEmpty) {
+        for (var cat in cats) {
+          if (cat['name'].toString().toLowerCase() == 'other' || cat['name'].toString().toLowerCase() == 'lainnya') {
+            _selectedCategoryId = cat['id'];
+            break;
+          }
+        }
+        _selectedCategoryId ??= cats.first['id'];
+      }
+
+      // Try to find matching account by name
+      final currentAccountName = _accounts.firstWhere(
+        (a) => a['id'] == _selectedAccountId, 
+        orElse: () => {'name': ''}
+      )['name'];
+      
+      _selectedAccountId = null;
+      if (currentAccountName != '') {
+        for (var acc in accs) {
+          if (acc['name'].toString().toLowerCase() == currentAccountName.toString().toLowerCase()) {
+            _selectedAccountId = acc['id'];
+            break;
+          }
+        }
+      }
+      if (_selectedAccountId == null && accs.isNotEmpty) {
+        _selectedAccountId = accs.first['id'];
+      }
+      
       _isLoading = false;
     });
   }
@@ -129,14 +192,14 @@ class _TransactionBottomSheetState extends State<TransactionBottomSheet> {
       'description': _description,
       'category_id': _selectedCategoryId,
       'account_id': _selectedAccountId,
-      'type': widget.activeMode,
+      'type': _currentMode,
       'transaction_type': _transactionType,
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final Color themeColor = widget.activeMode == 'personal' ? Colors.orange.shade600 : Colors.teal.shade600;
+    final Color themeColor = _currentMode == 'personal' ? Colors.orange.shade600 : Colors.teal.shade600;
     
     if (_isLoading) {
       return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
@@ -147,9 +210,11 @@ class _TransactionBottomSheetState extends State<TransactionBottomSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.9,
       ),
       child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: _currentMode == 'personal' 
+              ? const Color(0xFFFFF7ED) // Very light warm orange background
+              : const Color(0xFFF0FDF4), // Very light cool teal background
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(32),
             topRight: Radius.circular(32),
           ),
@@ -188,17 +253,72 @@ class _TransactionBottomSheetState extends State<TransactionBottomSheet> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: themeColor.withOpacity(0.1),
+                      if (widget.initialTransaction != null)
+                        InkWell(
+                          onTap: _toggleMode,
                           borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: themeColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: themeColor.withOpacity(0.3), width: 1),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _currentMode == 'personal' ? Icons.person : Icons.business,
+                                  size: 14,
+                                  color: themeColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _currentMode == 'personal' ? 'Pribadi' : 'Usaha',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: themeColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.swap_horiz,
+                                  size: 12,
+                                  color: themeColor.withOpacity(0.7),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: themeColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: themeColor.withOpacity(0.3), width: 1),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _currentMode == 'personal' ? Icons.person : Icons.business,
+                                size: 14,
+                                color: themeColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _currentMode == 'personal' ? 'Pribadi' : 'Usaha',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: themeColor,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Text(
-                          widget.activeMode.toUpperCase(),
-                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: themeColor),
-                        ),
-                      ),
                     ],
                   )
                 ],
